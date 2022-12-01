@@ -51,6 +51,7 @@ class PicopodControler:
         self.chat_field = chat_field
         self.entry = entry
         self.root = root
+        root.bind('<Return>', self.que_message)
         self.my_id = my_id
         self.reciever_id = reciever_id
         self.channel = channel
@@ -87,9 +88,10 @@ class PicopodControler:
                 baudrate=115200,
                 bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
 
-    def que_message(self):
+    def que_message(self, e=None):
         message = self.entry.get()
         self.queue.append(message)
+        self.entry.set("")
 
     def send_message(self, message):
         if self.s is not None:
@@ -146,9 +148,10 @@ def main():
     ports = serial_ports()
     ports_menu = tk.OptionMenu(frame_port_select, port_selected, *ports)
     ports_menu.pack(side=tk.LEFT)
+    message = tk.StringVar(root)
 
     e = tk.Entry(frame_messages, bg="#2C3E50",
-                 fg=TEXT_COLOR, font=FONT, width=55)
+                 fg=TEXT_COLOR, font=FONT, width=55, textvariable=message)
     e.grid(row=2, column=0)
     frame_messages.pack()
     # Submit button
@@ -180,12 +183,11 @@ def main():
     channel_str = tk.StringVar(root)
     channel_label = tk.Label(frame_port_select, textvariable=channel_str)
     channel_str.set("Channel:")
-
     channel_entry.pack(side=tk.RIGHT)
     channel_label.pack(side=tk.RIGHT)
 
     driver = PicopodControler(root, port_selected, txt,
-                              e, my_id, reciever_id, channel)
+                              message, my_id, reciever_id, channel)
 
     send = tk.Button(frame_messages, text="Send", font=FONT_BOLD, bg=BG_GRAY,
                      command=driver.que_message).grid(row=2, column=1)
