@@ -86,6 +86,7 @@ class PicopodControler:
                 port=port,
                 baudrate=115200,
                 bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
+            sleep(2)
             self.set_my_id()
 
     def que_message(self, e=None):
@@ -114,8 +115,6 @@ class PicopodControler:
                 print("noice")
                 serialString = self.s.readline().replace(b"\r", b"").replace(b"\n", b"")
                 print("recieved raw", serialString)
-
-                
                     
                 try:
                     serialString = serialString.decode(
@@ -139,7 +138,6 @@ class PicopodControler:
                 except Exception as e:
                     print(e)
               
-
     def set_my_id(self):
         if self.s is not None:
             print("trying to get name")
