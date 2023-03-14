@@ -87,7 +87,7 @@ class PicopodControler:
                 port=port,
                 baudrate=115200,
                 bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
-
+            self.set_my_id()
     def que_message(self, e=None):
         message_data = ["s", "3", "2", self.reciever_id.get(), self.my_id.get(), self.channel.get(), self.entry.get()]
         self.queue.append(message_data)
@@ -112,25 +112,40 @@ class PicopodControler:
 
     def get_messages(self):
         if self.s != None:
+            print("trying to get messages")
+
             if (self.s.in_waiting > 0):
+                print("noice")
                 serialString = self.s.readline().replace(b"\r", b"").replace(b"\n", b"")
-                serialString = serialString.decode(
-                    'utf_8')
-                if (serialString == "sent"):
-                    self.chat_field.insert(
-                        tk.END, f"|sending|\n")
+                print("recieved raw", serialString)
+
                 try:
+                    serialString = serialString.decode(
+                    'utf_8')
                     message = json.loads(serialString.replace(
                         "\r", "").replace("\n", ""))
                     print("recieved message", message)
                     if (message["type"] == 2):
                         self.chat_field.insert(
                             tk.END, f"recieved confirmation {message['sender']} -> {message['rssi']} db\n")
-                    else:
+                    elif message["type"] == 3:
                         self.chat_field.insert(
                             tk.END, f"com {message['sender']} -> {message['content']} (RSSI: {message['rssi']}db) \n")
-                except:
-                    pass
+                    elif message["type"] == -3:
+                        self.my_id.set(message["data"])
+                    elif message["type"] == -1:
+                        self.chat_field.insert(
+                            tk.END, f"|sending finished|\n")
+                    else:
+                        print(message)
+                except Exception as e:
+                    print(e)
+    def set_my_id(self):
+        if self.s is not None:
+            print("trying to get name")
+            self.s.write(b"g")
+            self.s.flush()
+
 
 
 def main():
