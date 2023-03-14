@@ -89,21 +89,26 @@ class PicopodControler:
                 bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
 
     def que_message(self, e=None):
-        message = self.entry.get()
-        self.queue.append(message)
+        message_data = ["s", "3", "2", self.reciever_id.get(), self.my_id.get(), self.channel.get(), self.entry.get()]
+        self.queue.append(message_data)
         self.entry.set("")
+
+    def que_pairing(self):
+        message_data = ["p", "4", "5", self.reciever_id.get(), self.my_id.get(), self.channel.get()]
+        self.queue.append(message_data)
+        pairing_id = self.reciever_id.get()
+        message_data = []
+
 
     def send_message(self, message):
         if self.s is not None:
-            self.s.write(b"s")
-            self.s.write(b"3")
-            self.s.write(b"2")
-            self.s.write(f"{self.reciever_id.get()}".encode())
-            self.s.write(f"{self.my_id.get()}".encode())
-            self.s.write(f"{self.channel.get()}".encode())
-            self.s.write(f"{message}>".encode())
+            for inf in message:
+                self.s.write(inf.encode())
             self.s.flush()
-            self.chat_field.insert(tk.END, f"You -> {message}\n")
+            if message[1] == "3":
+                self.chat_field.insert(tk.END, f"You -> {message[6]}\n")
+            elif message[1] == "4":
+                self.chat_field.insert(tk.END, f"sent pairing request to {message[3]} \n")
 
     def get_messages(self):
         if self.s != None:
@@ -163,9 +168,11 @@ def main():
     reciever_id = tk.StringVar()
     reciever_id_entry = tk.Entry(frame_port_select, textvariable=reciever_id)
     reciever_id.set("1")
+
     channel = tk.StringVar()
     channel_entry = tk.Entry(frame_port_select, textvariable=channel)
     channel.set("3")
+    
     id_str = tk.StringVar(root)
     id_label = tk.Label(frame_port_select, textvariable=id_str)
     id_str.set("My id: ")
@@ -191,6 +198,8 @@ def main():
 
     send = tk.Button(frame_messages, text="Send", font=FONT_BOLD, bg=BG_GRAY,
                      command=driver.que_message).grid(row=2, column=1)
+    pair = tk.Button(frame_messages, text="Pair", font=FONT_BOLD, bg=BG_GRAY,
+                     command=driver.que_pairing).grid(row=3, column=1)
 
     submit_button = tk.Button(
         frame_port_select, text='Select port', command=driver.que_connection)
