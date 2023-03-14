@@ -59,6 +59,7 @@ class PicopodControler:
         self.connect_queue = []
 
     def loop(self, ports):
+
         while True:
             sleep(SLEEP_TIME)
             self.run_tk()
@@ -86,71 +87,56 @@ class PicopodControler:
                 port=port,
                 baudrate=115200,
                 bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
-            self.set_my_id()
 
     def que_message(self, e=None):
-        message = self.entry.get()
-        self.queue.append(message)
+        message_data = ["s", "3", "2", self.reciever_id.get(), self.my_id.get(), self.channel.get(), self.entry.get()]
+        self.queue.append(message_data)
         self.entry.set("")
+
+    def que_pairing(self):
+        message_data = ["p", "4", "5", self.reciever_id.get(), self.my_id.get(), self.channel.get()]
+        self.queue.append(message_data)
+        pairing_id = self.reciever_id.get()
+        message_data = []
+
 
     def send_message(self, message):
         if self.s is not None:
-            self.s.write(b"c")
-            self.s.write(f"{self.my_id.get()}".encode())
-            sleep(0.1)
-            self.s.write(b"s")
-            self.s.write(b"3")
-            self.s.write(b"2")
-            self.s.write(f"{self.reciever_id.get()}".encode())
-            self.s.write(f"{self.my_id.get()}".encode())
-            self.s.write(f"{self.channel.get()}".encode())
-            self.s.write(f"{message}>".encode())
+            for inf in message:
+                self.s.write(inf.encode())
             self.s.flush()
-            self.chat_field.insert(tk.END, f"You -> {message}\n")
+            if message[1] == "3":
+                self.chat_field.insert(tk.END, f"You -> {message[6]}\n")
+            elif message[1] == "4":
+                self.chat_field.insert(tk.END, f"sent pairing request to {message[3]} \n")
 
     def get_messages(self):
         if self.s != None:
             if (self.s.in_waiting > 0):
-                print("noice")
                 serialString = self.s.readline().replace(b"\r", b"").replace(b"\n", b"")
-                print("recieved raw", serialString)
-
-                
-                    
-                try:
-                    serialString = serialString.decode(
+                serialString = serialString.decode(
                     'utf_8')
+                if (serialString == "sent"):
+                    self.chat_field.insert(
+                        tk.END, f"|sending|\n")
+                try:
                     message = json.loads(serialString.replace(
                         "\r", "").replace("\n", ""))
                     print("recieved message", message)
                     if (message["type"] == 2):
                         self.chat_field.insert(
                             tk.END, f"recieved confirmation {message['sender']} -> {message['rssi']} db\n")
-                    elif message["type"] == 3:
+                    else:
                         self.chat_field.insert(
                             tk.END, f"com {message['sender']} -> {message['content']} (RSSI: {message['rssi']}db) \n")
-                    elif message["type"] == -3:
-                        self.my_id.set(message["data"])
-                    elif message["type"] == -1:
-                        self.chat_field.insert(
-                            tk.END, f"|sending finished|\n")
-                    else:
-                        print(message)
-                except Exception as e:
-                    print(e)
-              
-
-    def set_my_id(self):
-        if self.s is not None:
-            print("trying to get name")
-            self.s.write(b"g")
-            self.s.flush()
+                except:
+                    pass
 
 
 def main():
     root = tk.Tk()
     root.title("Picopod comunicator")
-    root.geometry('1200x900')
+    root.geometry('900x700')
     frame_messages = tk.Frame(root)
 
     frame_port_select = tk.Frame(root)
@@ -182,9 +168,11 @@ def main():
     reciever_id = tk.StringVar()
     reciever_id_entry = tk.Entry(frame_port_select, textvariable=reciever_id)
     reciever_id.set("1")
+
     channel = tk.StringVar()
     channel_entry = tk.Entry(frame_port_select, textvariable=channel)
     channel.set("3")
+    
     id_str = tk.StringVar(root)
     id_label = tk.Label(frame_port_select, textvariable=id_str)
     id_str.set("My id: ")
@@ -210,6 +198,8 @@ def main():
 
     send = tk.Button(frame_messages, text="Send", font=FONT_BOLD, bg=BG_GRAY,
                      command=driver.que_message).grid(row=2, column=1)
+    pair = tk.Button(frame_messages, text="Pair", font=FONT_BOLD, bg=BG_GRAY,
+                     command=driver.que_pairing).grid(row=3, column=1)
 
     submit_button = tk.Button(
         frame_port_select, text='Select port', command=driver.que_connection)
