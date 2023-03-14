@@ -59,7 +59,6 @@ class PicopodControler:
         self.connect_queue = []
 
     def loop(self, ports):
-
         while True:
             sleep(SLEEP_TIME)
             self.run_tk()
@@ -112,7 +111,6 @@ class PicopodControler:
 
     def get_messages(self):
         if self.s != None:
-            print("trying to get messages")
 
             if (self.s.in_waiting > 0):
                 print("noice")
@@ -145,7 +143,6 @@ class PicopodControler:
             print("trying to get name")
             self.s.write(b"g")
             self.s.flush()
-
 
 
 def main():
