@@ -88,7 +88,7 @@ class PicopodControler:
                 bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
             self.set_my_id()
     def que_message(self, e=None):
-        message_data = ["s", "3", "2", self.reciever_id.get(), self.my_id.get(), self.channel.get(), self.entry.get()]
+        message_data = ["s", "3", "2", self.reciever_id.get(), self.my_id.get(), self.channel.get(), self.entry.get()+">"]
         self.queue.append(message_data)
         self.entry.set("")
 
